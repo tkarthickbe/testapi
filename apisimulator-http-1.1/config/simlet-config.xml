@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <!--
+    Base configuration for all simlets. Any bean defined here can be re-defined at
+    the simulation and/or simlet level and that bean will actually be used.
+  -->
+
+
+  <!-- 
+    To allow for multiple PropertyPlaceholderConfigurer-s use unique bean 
+    id for each and set ignoreUnresolvablePlaceholders=true.
+    
+    Setting 'ignoreUnresolvablePlaceholders=true' is important for 
+    successful configuration loading!
+    
+    The 'order' property assures this configurer will be executed last - 
+    after the ones that provide resolved ${...} values that are used here.
+  -->
+  <bean id="propertyPlaceholderConfigurer.last"
+    class="com.apisimulator.spring.config.SpringPropertyPlaceholderResolver">
+    <property name="ignoreUnresolvablePlaceholders" value="true" />
+    <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+    <property name="searchSystemEnvironment" value="true" />
+    <property name="order" value="-999999" />
+    <property name="properties">
+      <props>
+        <prop key="class.pkg.prefix">{{SimProps:classes.prefix| }}</prop>
+        <prop key="configfactory.id">{{SimProps:apisimulator.configfactory.id}}</prop>
+
+        <!--
+          The simlet.config_level placeholder is automatically resolved and its 
+          value set to the simlet's level in the configuration hierarchy.
+        -->
+        <prop key="simlet.input_id">${simlet.config_level}</prop>
+        
+        <prop key="simlets.path">{{SimProps:apisimulator.simlets.path}}</prop>
+        <prop key="simlet.raw_output_path">${simlets.path}/${simlet.input_id}</prop>
+        <prop key="simlet.raw_output_file">{{SimProps:simlet.raw_output_file_name}}</prop>
+        
+        <!--
+          Server name in HTTP output. Notice the space as fall-back choice.
+        -->
+        <prop key="http.server_name">{{SimProps:http.server_name| }}</prop>
+        
+        <prop key="http.response.max_initialLine_bytes">{{SimProps:http.response.max_initialLine_bytes}}</prop>
+        <prop key="http.response.max_header_bytes">{{SimProps:http.response.max_header_bytes}}</prop>
+        <prop key="http.response.max_chunk_bytes">{{SimProps:http.response.max_chunk_bytes}}</prop>
+        <prop key="http.response.max_content_bytes">{{SimProps:http.response.max_content_bytes}}</prop>
+        
+        <prop key="http.response.set_date_when_missing">{{SimProps:http.response.set_date_when_missing}}</prop>
+        <prop key="http.response.set_date_when_present">{{SimProps:http.response.set_date_when_present}}</prop>
+        
+        <prop key="http.response.apply_content_encoding">{{SimProps:http.response.apply_content_encoding}}</prop>
+        <prop key="http.response.apply_transfer_encoding">{{SimProps:http.response.apply_transfer_encoding}}</prop>
+        
+        <prop key="http.response.always_close_connection">{{SimProps:http.response.always_close_connection}}</prop>
+      </props>
+    </property>
+  </bean>
+
+
+  <bean id="appConfigFactoryLocator" class="${class.pkg.prefix}com.apisimulator.config.AppConfigFactoryLocator"
+      scope="singleton">
+    <constructor-arg value="${configfactory.id}" />
+  </bean>
+  <bean id="appConfigFactory" factory-bean="appConfigFactoryLocator"
+      factory-method="getAppConfigFactory" scope="singleton" />
+
+
+  <!-- 
+    Template for simlet output.
+  -->
+  <bean id="template" factory-bean="templateBuilder" factory-method="build"
+    scope="singleton" />
+
+  <!--
+    Template Builder.
+
+    Constructs and initializes a Template object for a simlet. Notice the "singleton"
+    scope.
+  -->
+  <bean id="templateBuilder" class="${class.pkg.prefix}com.apisimulator.output.TemplateBuilder"
+    scope="singleton">
+    <property name="defaultValueCreator" ref="valueCreator" />
+
+    <!--
+      The default name of the charset, if any, to use when outputting this
+      template's fragments.
+      Determining which charset to use for a fragment relies on a hierarchical
+      lookup:
+      1) look if charset is defined for the current fragment;
+      2) try the output context parameter ParameterName.OUTPUT_CHARSET_NAME
+         ("apisimulator.output.charset"). This can be set at run-time or as
+         a default parameter on the output context [builder].
+      3) finally, take the value defined here for the template.
+
+      Notice that a template-level value can be defined per simlet by, for
+      example, referencing a bean of type String which is overridden in simlet's
+      configuration.
+    -->
+    <property name="defaultCharsetName" value="{{SimProps:simlet.charset}}" />
+    
+    <property name="fragments" ref="placeholdersList" />
+
+    <!-- 
+      Uncomment and define it if desired to override the default. It is important to 
+      have the template initializer initialize fragments' streaming flag in a way that
+      is consistent with how the steps in the rendering pipeline work when it comes to
+      streaming.
+     -->
+    <!-- <property name="templateInitializer" ref="templateInitializer" /> -->
+
+    <!--
+      This property allows to override the default value resolvers for placeholders.
+      It can be defined here for the whole simulation and it can also be overridden
+      at a simlet level, if needed.
+    -->
+    <!-- <property name="placeholderResolverLocator" ref="placeholderResolverLocator"/> -->
+  </bean>
+
+  <!-- 
+     Placeholders for the template.
+
+    For dynamic templates, the "placeholders" bean must be re-defined 
+    in the simlet configuration.
+  -->
+  <bean name="placeholders" class="${class.pkg.prefix}com.apisimulator.config.ListBuilder">
+    <property name="sourceList"><list /></property>
+  </bean>
+  <bean name="placeholdersList" factory-bean="placeholders" factory-method="build" scope="singleton" />
+
+
+  <!-- Mappings between Placeholders and Placehoder Resolvers -->
+  <!--
+  <bean id="placeholderResolverLocator" 
+    class="${class.pkg.prefix}com.apisimulator.output.DfltPlaceholderResolverLocator"
+    scope="singleton">
+    <property name="mappings">
+      <map>
+        <entry key="${class.pkg.prefix}com.apisimulator.some-package.AbcPlaceholder">
+          <bean class="${class.pkg.prefix}com.apisimulator.some-package.AbcPlaceholderResolver " />
+        </entry>
+      </map>
+    </property>
+  </bean>
+  -->
+  
+  <bean id="valueCreator" class="${class.pkg.prefix}com.apisimulator.output.bin.BinaryOutputValueCreator"
+    scope="singleton" />
+  <!--
+  There is also support for text output values per placeholder. For example:
+  <bean id="textValueCreator" class="com.apisimulator.output.txt.TextOutputValueCreator"
+    scope="singleton" />
+  ...
+  <bean name="..." class="com..." p:offset="xx" p:length="y" p:name="abc">
+    <property name="valueCreator" ref="textValueCreator" />
+  </bean>
+  -->
+ 
+  <!-- 
+    Raw Output.
+
+    Notice the use of scope="singleton" when there's no mutable state. The benefit 
+    is that the raw output is loaded in memory only once instead for each simlet 
+    output.
+    The FileRandomAccessSource, though, requires scope="prototype"!
+
+    This bean can be overridden per simlet, if needed.
+
+    class="${class.pkg.prefix}com.apisimulator.io.BArrayRandomAccessFileSource" scope="singleton"
+    class="${class.pkg.prefix}com.apisimulator.io.BArrayRandomAccessSource" scope="singleton"
+    class="${class.pkg.prefix}com.apisimulator.io.StringRandomAccessSource" scope="singleton"
+    class="${class.pkg.prefix}com.apisimulator.io.StringRandomAccessFileSource" scope="singleton"
+    class="${class.pkg.prefix}com.apisimulator.io.FileRandomAccessSource" scope="prototype"
+  -->
+  <bean id="rawOutput" class="${class.pkg.prefix}com.apisimulator.io.BArrayRandomAccessResource"
+    scope="singleton">
+    <constructor-arg ref="rawOutputFile" />
+  </bean>
+
+  <bean id="rawOutputFile" class="java.io.File">
+    <constructor-arg value="${simlet.raw_output_path}" />
+    <constructor-arg value="${simlet.raw_output_file}" />
+  </bean>
+
+
+  <!-- 
+    Output Context Builder.
+
+    Scope is "prototype" to make sure that new map of output values is
+    used each time. The rawOutput configured here can be a singleton or prototype.
+  -->
+  <bean id="outputContextBuilder" class="${class.pkg.prefix}com.apisimulator.output.OutputContextBuilder"
+    scope="prototype">
+    <property name="rawOutput" ref="rawOutput" />
+
+    <!--
+      Configuration for the codec that will be used to process the output. 
+      The codec itself, if any, is defined in simulator-config.xml.
+    -->
+    <property name="codecConfig" ref="outputCodecConfig" />
+
+    <!--
+      Output Values for template placeholders.
+      There's a 'sensible' default so usually there's no need to define it.
+    -->
+    <!--
+    <property name="outputValues">
+      <bean class="org.springframework.beans.factory.config.MapFactoryBean"
+        scope="prototype">
+        <property name="sourceMap">
+          <map>
+          </map>
+        </property>
+      </bean>
+    </property>
+    -->
+    
+    <!--
+      Default Parameters.
+      
+      When defined, they are automatically added to the Output Context.
+      A default parameter will be used unless a parameter with the same 
+      name isn't created and overrides it during the simulation execution.
+    -->
+    <property name="defaultParameters">
+      <bean factory-bean="defaultParameters" factory-method="build" scope="prototype" />
+    </property>
+    
+    <property name="outputValueCreator" ref="valueCreator" />
+    <property name="charsetName" value="{{SimProps:simlet.charset}}" />
+  </bean>
+
+  <!-- 
+    Default Parameters for the Output Context.
+    
+    Actual "defaultParameters" are expected to be defined in the 
+    configuration of the simlets that make use of them.
+    Make sure scope="prototype"!!
+  -->
+  <bean name="defaultParameters" class="${class.pkg.prefix}com.apisimulator.config.MapBuilder" scope="prototype">
+    <property name="sourceMap">
+      <map value-type="java.util.HashMap">
+        <!-- <entry key="apisimulator.output.charset" value="UTF-8" /> -->
+      </map>
+    </property>
+  </bean>
+
+
+  <!--
+    Default Output Codec Configuration. 
+    
+    Re-define it at the simlet level to override  it and set whichever 
+    properties and values make sense for the simlet. That's possible
+    because of the use of abstract parent.
+
+    Use <null /> to represent a null value like in the following:
+    <property name="abc"><null /></property>
+    
+    This is with 'prototype' scope and not singleton because the outputDelay 
+    implementation may be with prototype and not singleton scope.
+  -->
+  <bean id="outputCodecConfig" parent="abstract.outputCodecConfig" />
+  <bean id="abstract.outputCodecConfig" 
+    class ="${class.pkg.prefix}com.apisimulator.http.HttpSimletOutputCodecConfig"
+    scope="prototype" abstract="true">
+    <property name="alwaysCloseConnection" value="${http.response.always_close_connection}" />
+
+    <property name="applyContentEncoding" value="${http.response.apply_content_encoding}" />
+
+    <property name="applyTransferEncoding" value="${http.response.apply_transfer_encoding}" />
+
+    <property name="applyServerName" value="${http.server_name}" />
+
+    <property name="setDateWhenMissing" value="${http.response.set_date_when_missing}" />
+
+    <property name="setDateWhenPresent" value="${http.response.set_date_when_present}" />
+
+    <property name="responseMaxInitialLineBytes" value="${http.response.max_initialLine_bytes}" />
+
+    <property name="responseMaxHeaderBytes" value="${http.response.max_header_bytes}" />
+
+    <property name="responseMaxChunkBytes" value="${http.response.max_chunk_bytes}" />
+
+    <property name="responseMaxContentBytes" value="${http.response.max_content_bytes}" />
+    
+    <!-- 
+      Delay to simulate latency. 
+      Uses OneTimeDelay because of the response streaming - 
+      to avoid applying the delay to each output chunk.
+    -->
+    <property name="outputDelay">
+      <bean class="${class.pkg.prefix}com.apisimulator.delay.OneTimeDelay" scope="prototype">
+        <constructor-arg ref="outputDelay" />
+      </bean>
+    </property>
+  </bean>
+
+  <bean name="outputDelay" factory-bean="outputDelayBuilder" factory-method="build" scope="prototype" /> 
+  <bean name="outputDelayBuilder" class="${class.pkg.prefix}com.apisimulator.delay.DelayBuilder" 
+    scope="singleton">
+    <constructor-arg ref="appConfigFactory" />
+    <constructor-arg value="${simlet.config_level}" />
+  </bean>
+
+
+  <!-- 
+    Template Renderer.
+
+    The bean is looked up in the code. 
+  -->
+  <bean id="templateRenderer" class="${class.pkg.prefix}com.apisimulator.output.ConfigurableTemplateRenderer"
+    scope="prototype">
+    <property name="renderingPipeline">
+      <!-- 
+        The pipeline is modifiable at run-time so make sure scope="prototype".
+      -->
+      <bean name="renderingPipeline" 
+        class="${class.pkg.prefix}com.apisimulator.output.ConfigurableRenderingPipeline"
+        scope="prototype">
+        <constructor-arg ref="templateRenderingSteps" />
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="resolveAndOutputTemplateRenderingStep" 
+    class="${class.pkg.prefix}com.apisimulator.output.ResolveAndOutputTemplateRenderingStep"
+    scope="singleton" />
+
+  <!-- 
+    The "templateRenderingSteps" list bean can be overridden at a simlet level by 
+    redefining the bean in simlet's configuration with different list elements.
+   -->
+  <bean id="templateRenderingSteps" factory-bean="templateRenderingStepsFactory" 
+    factory-method="build" scope="singleton" />
+  <bean name="templateRenderingStepsFactory" class="${class.pkg.prefix}com.apisimulator.config.ListBuilder">
+    <property name="sourceList">
+      <list>
+        <ref bean="resolveAndOutputTemplateRenderingStep" />
+      </list>
+    </property>
+  </bean>
+
+
+  <!-- Parameters Collector -->
+  <bean id="parametersCollector" class="${class.pkg.prefix}com.apisimulator.parms.ParametersCollector"
+    scope="singleton">
+    <constructor-arg ref="parametersList" />
+  </bean>
+
+  <!--
+    The actual 'parameters' must be re-defined in simlet's configuration 
+    with an actual list if there are any parameters for the simlet.
+  -->
+  <bean name="parameters" class="${class.pkg.prefix}com.apisimulator.config.ListBuilder" scope="singleton">
+    <property name="sourceList"><list /></property>
+  </bean>
+  <bean name ="parametersList" factory-bean="parameters" factory-method="build" scope="singleton" />
+
+  <!-- 
+    Input Matching.
+
+    Having abstract parent and concrete "inputMatcher" beans allows to
+    redefine "inputMatcher" at simlet level and change only some properties
+    like "rank", for example. 
+  -->
+  <bean id="inputMatcher" parent="abstract.inputMatcherMatchAll" />
+  <bean id="abstract.inputMatcherMatchAll" class="${class.pkg.prefix}com.apisimulator.input.MatchAllInputMatcher"
+    scope="singleton" abstract="true">
+    <!--
+      The rank determines the precedence of calling 
+      input matchers while trying to match an input. 
+     -->
+    <property name="rank" value="0" />
+    
+    <!--
+      When input is successfully matched using this "match-all" matcher, 
+      this input id is then used to determine which output to return.
+    -->
+    <property name="inputId" ref="inputId" />
+    
+    <property name="matcherList">
+      <bean factory-bean="matchers" factory-method="build" scope="singleton" />
+    </property>
+    
+    <property name="parametersSupplier" ref="parametersCollector" />
+  </bean>
+
+  <!-- Override "matchers" as needed in simlet configuration -->
+  <bean name="matchers" class="${class.pkg.prefix}com.apisimulator.config.ListBuilder">
+    <property name="sourceList"><list /></property>
+  </bean>
+
+
+  <bean id="inputId" class="${class.pkg.prefix}com.apisimulator.simulation.impl.StringInputId">
+    <constructor-arg value="${simlet.input_id}" />
+  </bean> 
+
+
+</beans>

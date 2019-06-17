@@ -1,0 +1,27 @@
+#----------------------------------------------------------------------
+# Simlet-specific configuration.
+#----------------------------------------------------------------------
+
+matchers:
+- method: POST
+
+- where: UriPath
+  equals: "/OrderData"
+
+- header: "Content-Type"
+  equals: "application/json"
+
+response:
+  from: template
+  template: Simula
+  
+  status: 200
+  
+  headers:
+  - "Content-Type: application/json; charset=UTF-8"
+
+  body:
+    type: text
+    file: 
+      path: "${ simlets.path }/PUCK/OrderData"
+      name: "Response.json"

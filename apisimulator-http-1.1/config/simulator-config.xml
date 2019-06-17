@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+  ">
+
+
+  <!--
+    The presence of a bean with this id indicates that the configuration at this level 
+    is concrete and the objects shall be instantiated and the placeholders resolved.
+  -->
+  <bean id="ConcreteConfigMarker" class="java.lang.Object" />
+
+
+  <bean id="propertyPlaceholderConfigurer.last" 
+    class="com.apisimulator.spring.config.SpringPropertyPlaceholderResolver">
+    <property name="ignoreUnresolvablePlaceholders" value="true" />
+    <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+    <property name="searchSystemEnvironment" value="true" />
+    <property name="order" value="-999999" />
+    <property name="properties">
+      <props>
+        <prop key="class.pkg.prefix">{{SimProps:classes.prefix| }}</prop>
+        <prop key="configfactory.id">{{SimProps:apisimulator.configfactory.id}}</prop>
+      </props>
+    </property>
+  </bean>
+
+
+  <bean id="appConfigFactoryLocator" class="${class.pkg.prefix}com.apisimulator.config.AppConfigFactoryLocator"
+      scope="singleton">
+    <constructor-arg value="${configfactory.id}" />
+  </bean>
+  <bean id="appConfigFactory" factory-bean="appConfigFactoryLocator"
+      factory-method="getAppConfigFactory" scope="singleton" />
+
+   
+  <!--
+    Simulator Server.
+
+    It binds to a host (network interface) and listens on a port for input.
+    The implementation is based on the terrific Netty (http://netty.io).
+
+    To allow for multiple servers to be started and stopped: scope="prototype"
+  -->
+  <bean id="simulatorServer" class="${class.pkg.prefix}com.apisimulator.netty.NettySimulatorServer"
+    scope="prototype">
+    <!--
+      Look first as a System (JVM) property and if not resolved
+      then as a SimProps property. The fall-back for host is empty
+      string which means the default in the code will be used.
+
+      It's an interesting possibility to have the fall-back option
+      be in the form of ${xx} to be resolved by Spring's
+      PropertyPlaceholderConfigurer which can look it up in a file,
+      as a JVM argument or environment variable.
+    -->
+    <constructor-arg value="{{SimProps:apisimulator.host| }}" />
+    <constructor-arg value="{{SimProps:apisimulator.port}}" />
+    <property name="bossGroup">
+      <bean class="${class.pkg.prefix}io.netty.channel.nio.NioEventLoopGroup">
+        <constructor-arg value="{{SimProps:netty.boss_threads_count}}" />
+        <constructor-arg>
+          <bean class="${class.pkg.prefix}com.apisimulator.netty.NettySimulationThreadFactory" scope="singleton">
+            <constructor-arg value="API Simulator Boss" />
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
+
+    <property name="workerGroup">
+      <bean class="${class.pkg.prefix}io.netty.channel.nio.NioEventLoopGroup">
+        <constructor-arg value="{{SimProps:netty.worker_threads_count}}" />
+        <constructor-arg>
+          <bean class="${class.pkg.prefix}com.apisimulator.netty.NettySimulationThreadFactory" scope="singleton">
+            <constructor-arg value="API Simulator Worker" />
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
+
+    <property name="channelClassName" value="${class.pkg.prefix}io.netty.channel.socket.nio.NioServerSocketChannel" />
+
+    <property name="channelInitializer">
+      <bean class="${class.pkg.prefix}com.apisimulator.netty.ConfigurableChannelInitializer">
+        <constructor-arg>
+          <bean class="${class.pkg.prefix}com.apisimulator.spring.config.SpringNettyChannelHandlersFactory">
+            <property name="appConfigFactory" ref="appConfigFactory" />
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
+
+    <property name="options">
+      <map value-type="java.lang.Boolean">
+        <entry key="AUTO_READ" value="true" />
+        <!-- Upgrade to Netty 4.1.23 - gives "Unknown channel option" warning 
+        <entry key="SO_KEEPALIVE" value="true" />
+         -->
+      </map>
+    </property>
+
+    <property name="childOptions">
+      <map>
+        <!--
+          AUTO_READ=false isn't working currently - there's no explicit
+          call to read from the channel.
+        -->
+        <entry key="AUTO_READ" value="true" value-type="java.lang.Boolean" />
+
+        <!--
+          PooledByteBufAllocator or UnpooledByteBufAllocator.
+          UnpooledByteBufAllocator may be more appropriate For the VM with limited 
+          memory.
+          The constructor argument preferDirect=true|false for both pooled or unpooled.
+        -->
+        <entry key="ALLOCATOR">
+          <bean class="${class.pkg.prefix}io.netty.buffer.PooledByteBufAllocator">
+            <constructor-arg value="true" />
+          </bean>
+        </entry>
+      
+        <!--
+          See ChannelConfig.setWriteBufferLowWaterMark(int). Defaults to (32 * 1024 = 32768).
+          NOTE: Set the low watermark BEFORE setting the high low watermark!
+        -->
+        <entry key="WRITE_BUFFER_LOW_WATER_MARK" value="32768" value-type="java.lang.Integer" />
+
+        <!-- 
+         See ChannelConfig.setWriteBufferHighWaterMark(int). Defaults to (64 * 1024 = 65536)
+         -->
+        <entry key="WRITE_BUFFER_HIGH_WATER_MARK" value="65536" value-type="java.lang.Integer" />
+      </map>
+    </property>
+  </bean>
+
+
+  <!--
+    Channel Handlers.
+
+    Beans for channel handler elements for the Netty-based server. Beans
+    have scope="prototype" when the channel handler has mutable state.
+    Each ChannelHandlerElement defines the order of the given handler
+    (the first constructor argument), handler name, and the actual channel
+    handler.
+
+    A list with these beans is re-created for every input so that the processing
+    is thread-safe. The list is also sorted by the order field before using it to
+    configure the channel pipeline.
+    Beans with the same order value will cause an exception.
+
+    To change the channel handlers configuration for a particular simulation,
+    just create this configuration file in the 'simlets' directory (if it
+    doesn't exist already) and:
+    - to add or insert a channel handler: add a bean definition with the desired
+    ordered value so it is placed in the desired position in the list.
+    - to remove a channel handler: add bean definition with exactly the same name,
+    order value, and of type 'com.apisimulator.netty.NoOpChannelInboundHandler'.
+  -->
+  <bean name="handler.readTimeoutManager" class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement"
+    scope="prototype">
+    <constructor-arg value="100" />
+    <!-- Same as com.apisimulator.netty.ReadTimeoutManagerHandler.READ_TIMEOUT_MANAGER_NAME -->
+    <constructor-arg value="apisimulator.readTimeoutManager" />
+    <constructor-arg>
+      <bean class="${class.pkg.prefix}com.apisimulator.netty.ReadTimeoutManagerHandler" scope="prototype">
+        <constructor-arg value="{{SimProps:netty.read_timeout_seconds}}" />
+        <property name="closeChannelOnTimeout" 
+                 value="{{SimProps:netty.close_channel_on_read_timeout}}" />
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean name="handler.tlsHandler" class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement"
+    scope="prototype">
+    <constructor-arg value="150" />
+    <constructor-arg value="tlsHandler" />
+    <constructor-arg ref="tlsHandler" />
+  </bean>
+  <bean name="tlsHandler" factory-bean="tlsHandlerBuilder" factory-method="build" scope="prototype" /> 
+  <bean name="tlsHandlerBuilder" class="${class.pkg.prefix}com.apisimulator.netty.TlsChannelInboundHandlerBuilder" 
+    scope="singleton">
+    <property name="appConfigFactory" ref="appConfigFactory" />
+  </bean>
+
+  <bean name="handler.httpRequestDecoder" class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement"
+    scope="prototype">
+    <constructor-arg value="200" />
+    <constructor-arg value="httpRequestDecoder" />
+    <constructor-arg>
+      <bean class="${class.pkg.prefix}io.netty.handler.codec.http.HttpRequestDecoder" scope="prototype" />
+    </constructor-arg>
+  </bean>
+
+  <!--
+    <bean name="handler.chunkedWriteHandler"
+    class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement" scope="prototype">
+    <constructor-arg value="250" />
+    <constructor-arg value="chunkedWriteHandle" />
+    <constructor-arg>
+    <bean class="${class.pkg.prefix}io.netty.handler.stream.ChunkedWriteHandler" scope="prototype" />
+    </constructor-arg>
+    </bean>
+  -->
+
+  <bean name="handler.httpObjectAggregator" class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement"
+    scope="prototype">
+    <constructor-arg value="300" />
+    <constructor-arg value="httpObjectAggregator" />
+    <constructor-arg>
+      <bean class="${class.pkg.prefix}io.netty.handler.codec.http.HttpObjectAggregator" scope="prototype">
+        <constructor-arg value="{{SimProps:http.request.max_content_length}}" />
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean name="handler.fullHttpRequestApiSimulationHandler" class="${class.pkg.prefix}com.apisimulator.netty.ChannelHandlerElement"
+    scope="prototype">
+    <constructor-arg value="400" />
+    <constructor-arg value="fullHttpRequestApiSimulationHandler" />
+    <constructor-arg>
+      <bean
+        class="${class.pkg.prefix}com.apisimulator.http.netty.NettyFullHttpRequestApiSimulationHandler"
+        scope="prototype">
+        <constructor-arg ref="simulation" />
+        <property name="outputCodec" ref="outputCodec" />
+      </bean>
+    </constructor-arg>
+    <property name="eventExecutorGroup" ref="simulationExecutors" />
+  </bean>
+
+  <bean id="simulationExecutors" class="${class.pkg.prefix}io.netty.util.concurrent.DefaultEventExecutorGroup"
+    scope="singleton">
+    <constructor-arg value="{{SimProps:netty.apisim_threads_count}}" />
+    <constructor-arg>
+      <bean class="${class.pkg.prefix}com.apisimulator.netty.NettySimulationThreadFactory"
+        scope="singleton" />
+    </constructor-arg>
+  </bean>
+
+  <!--
+    Output Codec's role is to process the output by applying some encoding/decoding.
+    Warning: make sure scope="prototype"!
+  -->
+  <bean id="outputCodec" class="${class.pkg.prefix}com.apisimulator.http.netty.NettyHttpSimletOutputCodec"
+    scope="prototype" />
+  <!-- @END Channel Handlers -->
+
+
+  <!--
+    Simulation.
+
+    A Simulation uses pipeline (Pipeline Pattern) of Simulation Steps. Each step
+    performs a task, part of the simulation.
+
+    Scope is prototype because a new context builder has to produce new simulation
+    context for every input.
+  -->
+  <bean id="simulation" class="${class.pkg.prefix}com.apisimulator.simulation.impl.DefaultSimulation"
+    scope="prototype">
+    <property name="contextBuilder" ref="simulationContextBuilder" />
+    <property name="pipelineElements" ref="pipelineElements" />
+    <property name="appConfigFactory" ref="appConfigFactory" />
+  </bean>
+
+
+  <!--
+    Simulation Context Builder.
+
+    Creates and configures new Simulation Context for every input. Thus, scope="prototype".
+  -->
+  <bean id="simulationContextBuilder" class="${class.pkg.prefix}com.apisimulator.simulation.impl.SimulationContextBuilder"
+    scope="prototype">
+    <!--
+      Default Parameters, when defined, are automatically added to the Simulation
+      Context.
+    -->
+    <!-- <property name="defaultParameters" ref="defaultParameters" /> -->
+  </bean>
+
+
+  <!--
+    Default Parameters for the Simulation Context.
+
+    If needed, uncomment and configure default parameter name/value pairs.
+  -->
+  <!--
+    <bean id="defaultParameters" class="${class.pkg.prefix}org.springframework.beans.factory.config.MapFactoryBean"
+    scope="prototype">
+    <property name="targetMapClass" ref="concurrentHashMapClass" />
+    <property name="sourceMap">
+    <map>
+    <entry key="parameter-name" value="parameter-value" />
+    </map>
+    </property>
+    </bean>
+    <bean id="concurrentHashMapClass" factory-bean="concurrentHashMapModelBean"
+    factory-method="getClass" scope="singleton" />
+    <bean name="concurrentHashMapModelBean" class="java.util.concurrent.ConcurrentHashMap"
+    scope="singleton" />
+  -->
+
+
+  <!--
+    Simulation Pipeline Elements.
+
+    Scope is "singleton" - make sure that all SimulationStep-s are thread-safe!
+  -->
+  <bean id="pipelineElements" class="${class.pkg.prefix}org.springframework.beans.factory.config.ListFactoryBean"
+    scope="singleton">
+    <property name="sourceList">
+      <list>
+        <bean class="java.util.AbstractMap.SimpleEntry">
+          <constructor-arg value="parse-http-protocol" />
+          <constructor-arg>
+            <bean
+              class="${class.pkg.prefix}com.apisimulator.http.netty.NettyFullHttpRequestToDomSimulationStep" />
+          </constructor-arg>
+        </bean>
+
+        <bean class="java.util.AbstractMap.SimpleEntry">
+          <constructor-arg value="match-input" />
+          <constructor-arg>
+            <bean class="${class.pkg.prefix}com.apisimulator.simulation.impl.MatchInputSimulationStep">
+              <constructor-arg>
+                <bean class="${class.pkg.prefix}com.apisimulator.spring.config.SpringInputMatcherConfig"
+                  scope="singleton">
+                  <property name="appConfigFactory" ref="appConfigFactory" />
+                </bean>
+              </constructor-arg>
+            </bean>
+          </constructor-arg>
+        </bean>
+
+        <bean class="java.util.AbstractMap.SimpleEntry">
+          <constructor-arg value="map-input-to-output" />
+          <constructor-arg>
+            <bean
+              class="${class.pkg.prefix}com.apisimulator.simulation.impl.MapInputToOutputSimulationStep">
+              <property name="mappingStrategy">
+                <bean
+                  class="${class.pkg.prefix}com.apisimulator.simulation.impl.DirectInputToOutputMappingStrategy">
+                  <constructor-arg value="{{SimProps:simlet.default}}" />
+                </bean>
+              </property>
+              <property name="appConfigFactory" ref="appConfigFactory" />
+            </bean>
+          </constructor-arg>
+        </bean>
+
+<!-- Automatic parameters collection makes this not needed
+        <bean class="java.util.AbstractMap.SimpleEntry">
+          <constructor-arg value="extract-input-parms" />
+          <constructor-arg>
+            <bean
+              class="${class.pkg.prefix}com.apisimulator.simulation.impl.PopulateParametersSimulationStep">
+              <constructor-arg>
+                <bean
+                  class="${class.pkg.prefix}com.apisimulator.spring.config.SpringParametersCollectorFactory"
+                  factory-method="getInstance" />
+              </constructor-arg>
+            </bean>
+          </constructor-arg>
+        </bean>
+ -->
+
+        <bean class="java.util.AbstractMap.SimpleEntry">
+          <constructor-arg value="render-output" />
+          <constructor-arg>
+            <bean class="${class.pkg.prefix}com.apisimulator.simulation.impl.RenderOutputSimulationStep">
+              <constructor-arg>
+                <bean
+                  class="${class.pkg.prefix}com.apisimulator.spring.config.SpringOutputRenderingFactory"
+                  factory-method="getInstance" />
+              </constructor-arg>
+            </bean>
+          </constructor-arg>
+        </bean>
+      </list>
+    </property>
+  </bean>
+
+</beans>

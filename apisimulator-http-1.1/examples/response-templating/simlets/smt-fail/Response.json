@@ -1,0 +1,21 @@
+{
+	"requestId": "123456679769",
+	"status": "NACK",
+	"error": {
+		"code": "202",
+		"description": "error",
+		"level": "error"
+	},
+	"units": [{
+		"pcbSN": "1233379735935779",
+		"tests": [{
+			"machineName": "spi",
+			"status": "NACK",
+			"error" : {
+				"code" : "202",
+				"description" : "error",
+				"level" : "error"
+				}
+			}]
+		}]	
+}

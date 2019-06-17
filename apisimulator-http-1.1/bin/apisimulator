@@ -1,0 +1,237 @@
+#!/bin/sh
+set -e
+#set -x
+# ---------------------------------------------------------------------------
+# Start/Stop Script for an API Simulator
+# ---------------------------------------------------------------------------
+
+printUsageAndExit()
+{
+  echo
+  echo "Usage:"
+  echo "$0 command path_to_simulation_home_directory"
+  echo "where command is one of"
+  echo "  start     Start an API Simulator instance"
+  echo "  stop      Stop an API Simulator instance"
+  echo "  init      Initialize a new API Simulation directory structure. Expects an absolute path for argument"
+  echo
+  exit 1
+}
+
+
+# DNS_SUBDOMAIN_REGEX="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+# is_valid_dns_subdomain() {
+#   if [[ $1 =~ $DNS_SUBDOMAIN_REGEX ]]; then
+#     return 0 # success
+#   fi
+#   return 1
+# }
+
+validateApiSimulationName()
+{
+  case "$APISIMULATION_HOME" in
+    *[[:space:]]*)
+      echo  The name of the API Simulation contains whitespace character\(s\). Exiting...
+      exit 101
+  esac
+  # TODO After testing, replace with:
+  #if ! is_valid_dns_subdomain "$APISIMULATION_HOME"; then
+  #  echo  "The name of the API Simulation is not a valid DNS subdomain name. Checked against '$DNS_SUBDOMAIN_REGEX'. Exiting..."
+  #  exit 101
+  #fi
+}
+
+
+if [ "$1" = "init" ] ; then
+  APISIMULATION_HOME="$2"
+  if [ "$APISIMULATION_HOME" = "" ] ; then
+    echo Path to simulation expected
+    printUsageAndExit
+  fi
+
+  validateApiSimulationName
+
+  if [ -d "$APISIMULATION_HOME" ] ; then
+    echo Directory "$APISIMULATION_HOME" exists already. It will not be overwriten. Exiting...
+    exit 102
+  fi
+
+  echo "Initializing the simulation's directory structure..."
+
+  mkdir -p "$APISIMULATION_HOME/simlets/_default"
+
+  cat > "$APISIMULATION_HOME/simlets/_default/simlet.yaml" << EOF
+response:
+  from: stub
+  status: 404
+  headers:
+  - "Content-Type: application/text; charset=UTF-8"
+  body: "API Simulator couldn't find a matching simlet for the request."
+EOF
+
+  echo Done initializing the directory structure.
+
+  exit 0
+fi
+
+
+if [ "$1" = "start" ] ; then
+  # Only set if not set already
+  test ".$APISIMULATOR_HEAP_SIZE" = . && APISIMULATOR_HEAP_SIZE="-Xms128m -Xmx128m"
+
+  test ".$APISIMULATION_LOG_FILE" = . && APISIMULATION_LOG_FILE="apisimulator-log4j2.xml"
+elif [ "$1" = "stop" ]; then
+  # Only set if not set already. 32m seems to be the minimum heap for Java to run on some Mac OS X
+  test ".$APISIMULATOR_HEAP_SIZE" = . && APISIMULATOR_HEAP_SIZE="-Xms128m -Xmx128m"
+
+  test ".$APISIMULATION_LOG_FILE" = . && APISIMULATION_LOG_FILE="apisimulator-stop-log4j2.xml"
+else
+  printUsageAndExit
+fi
+
+
+# Resolve links - $0 may be a link to simulator's home
+PRG="$0"
+
+# need this for relative symlinks
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="`dirname "$PRG"`/$link"
+  fi
+done
+
+ABS_THIS_DIR=`dirname "$PRG"`
+
+# This script is expected to be in 'bin' sub-directory under the simulator's home directory
+APISIMULATOR_HOME="$ABS_THIS_DIR/.."
+
+# Make it fully qualified
+APISIMULATOR_HOME=`cd "$APISIMULATOR_HOME" && pwd`
+
+
+APISIMULATION_HOME="$2"
+if [ "$APISIMULATION_HOME" = "" ] ; then
+  echo Path to simulation expected
+  printUsageAndExit
+fi
+if [ ! -d "$APISIMULATION_HOME" ] ; then
+  v_start_chars=`echo $APISIMULATION_HOME | cut -c1`
+  if [ "$v_start_chars" = "/" ]; then
+    # The directory doesn't exist AND it represents an absolute directory name
+    :
+  else
+    # Is the directory path relative to the current directory?
+    CURRENT_DIR=`pwd`
+    if [ -d "$CURRENT_DIR/$APISIMULATION_HOME" ] ; then
+      APISIMULATION_HOME="$CURRENT_DIR/$APISIMULATION_HOME"
+    else
+      v_start_chars=`echo $APISIMULATION_HOME | cut -c1-2`
+      if [ "$v_start_chars" = "./" ]; then
+        # The directory isn't in the current dir but it is path relative to the current dir
+        :
+      elif [ -d "$APISIMULATOR_HOME/$APISIMULATION_HOME" ] ; then
+        APISIMULATION_HOME="$APISIMULATOR_HOME/$APISIMULATION_HOME"
+      fi
+    fi
+  fi
+fi
+if [ ! -d "$APISIMULATION_HOME" ] ; then
+  echo Simulation home directory "$APISIMULATION_HOME" doesn\'t exist
+  printUsageAndExit
+fi
+# Make it fully qualified
+APISIMULATION_HOME=`cd "$APISIMULATION_HOME" && pwd`
+
+validateApiSimulationName
+
+
+# The home of the JDK install for the simulator can be overridden per simulation
+if [ "$APISIMULATOR_JAVA" = "" ] ; then
+  APISIMULATOR_JAVA="$JAVA_HOME"
+  if [ "$APISIMULATOR_JAVA" = "" ] ; then
+    echo "APISIMULATOR_JAVA nor JAVA_HOME are set"
+    exit 100
+  fi
+fi
+
+
+APISIMULATION_CONFIG="$APISIMULATION_HOME/config"
+if [ ! -d "$APISIMULATION_CONFIG" ] ; then
+  #echo Simulation configuration directory "$APISIMULATION_CONFIG" doesn\'t exist
+  #exit 101
+  APISIMULATION_CONFIG="$APISIMULATION_HOME"
+fi
+
+
+APISIMULATION_SIMLETS_DIR="$APISIMULATION_HOME/simlets"
+if [ ! -d "$APISIMULATION_SIMLETS_DIR" ] ; then
+  echo Simulation simlets directory "$APISIMULATION_SIMLETS_DIR" doesn\'t exist
+  exit 101
+fi
+
+
+test ".$APISIMULATION_LOG_PATH" = . && APISIMULATION_LOG_PATH="$APISIMULATION_HOME/logs"
+if [ ! -d "$APISIMULATION_LOG_PATH" ] ; then
+  #echo Simulation logs directory "$APISIMULATION_LOG_PATH" doesn\'t exist
+  #exit 101
+  APISIMULATION_LOG_PATH="$APISIMULATION_HOME"
+fi
+
+
+APISIMULATION_LOG_CONFIG="$APISIMULATION_CONFIG/$APISIMULATION_LOG_FILE"
+if [ ! -f "$APISIMULATION_LOG_CONFIG" ] ; then
+  APISIMULATION_LOG_CONFIG="$APISIMULATOR_HOME/config/$APISIMULATION_LOG_FILE"
+fi
+
+# No spaces in any of the directory or file names! -Dlog4j.debug
+# The -DAPISIMULATION_LOG_PATH JVM argument is used in log4j2.xml
+APISIMULATION_LOG_ARGS="-Dlog4j.configurationFile=$APISIMULATION_LOG_CONFIG"
+APISIMULATION_LOG_ARGS="$APISIMULATION_LOG_ARGS -DAPISIMULATION_LOG_PATH=$APISIMULATION_LOG_PATH "
+
+
+APISIMULATION_CP="$APISIMULATION_CONFIG/*:$APISIMULATION_HOME/lib/*"
+CP=$APISIMULATION_CP:$APISIMULATOR_HOME/lib/*
+
+
+test ".$APISIMULATION_SCRIPTS_DIRS" = . && APISIMULATION_SCRIPTS_DIRS="$APISIMULATION_HOME/scripts"
+
+
+if [ "$APISIMULATOR_CONFIG_DIRS" = "" ] ; then
+  APISIMULATOR_CONFIG_DIRS="$APISIMULATOR_HOME/config"
+fi
+
+
+if [ "$1" = "start" ] ; then
+  shift
+  shift
+
+  APISIMULATOR_OPTS="-server $APISIMULATOR_OPTS $APISIMULATOR_HEAP_SIZE"
+
+  #nohup ... > ${APISIMULATION_OUT} 2>&1 &
+  "${APISIMULATOR_JAVA}/bin/java" ${APISIMULATOR_OPTS} -cp "$CP" \
+    ${APISIMULATION_LOG_ARGS} \
+    com.apisimulator.APISimulator \
+      -c "$APISIMULATOR_CONFIG_DIRS" \
+      -s "$APISIMULATION_SIMLETS_DIR" \
+      -scripts "$APISIMULATION_SCRIPTS_DIRS" \
+      "$APISIMULATION_HOME" \
+      $@
+
+elif [ "$1" = "stop" ]; then
+  shift
+  shift
+
+  APISIMULATOR_OPTS="$APISIMULATOR_OPTS $APISIMULATOR_HEAP_SIZE"
+
+  "${APISIMULATOR_JAVA}/bin/java" ${APISIMULATOR_OPTS} -cp "$CP" \
+    ${APISIMULATION_LOG_ARGS} \
+    com.apisimulator.APISimulator \
+      -stop \
+      "$APISIMULATION_HOME" \
+      $@
+
+fi

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Properties>
+    <Property name="filename">${sys:APISIMULATION_LOG_PATH}/apisimulator.log</Property>
+  </Properties>
+
+  <Appenders>
+    <!-- The square brackets [%m] help with multi-line messages -->
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout>
+        <pattern>%d{ISO8601}|%p|${sys:jvm.pid}|%t|[%m]%n</pattern>
+      </PatternLayout>
+    </Console>
+
+    <!--
+      Tips:
+      - The square brackets [%m] in the pattern help with multi-line messages.
+      - Add ".gz" to the end of the filePattern to have the files gzip-ed.
+      - Timestamp in the name: filePattern="apisimulator-http.%d{yyyy-MM-dd-HH-mm-ss}.log"
+      - interval="86400" => 24 hours because most specific time unit in the date
+        pattern is seconds
+    -->
+    <RollingFile name="RollingTextFile" fileName="${filename}"
+      filePattern="${filename}.%i" immediateFlush="false" append="true">
+      <PatternLayout>
+        <pattern>%d{ISO8601}|%p|${sys:jvm.pid}|%t|[%m]%n</pattern>
+      </PatternLayout>
+      <Policies>
+        <OnStartupTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="100MB" />
+        <!-- Add this only if filePattern has timestamp
+          <TimeBasedTriggeringPolicy interval="86400" modulate="true" /> -->
+      </Policies>
+      <DefaultRolloverStrategy max="5" />
+    </RollingFile>
+
+    <!--
+      Per the online doc, "...The Async Appender should be configured after
+      the appenders it references. This will allow it to shutdown properly"
+    -->
+    <Async name="ASYNC" bufferSize="256">
+      <!-- <AppenderRef ref="STDOUT" /> -->
+      <AppenderRef ref="RollingTextFile" />
+    </Async>
+  </Appenders>
+
+  <Loggers>
+    <!-- <Logger name="com.apimastery.config" level="debug"/> -->
+    <!-- <Logger name="com.apimastery.config" level="info"/> -->
+    <!-- <Logger name="com.apimastery.config" level="warn"/> -->
+    <!-- <Logger name="com.apimastery.config" level="error"/> -->
+
+    <!-- <Logger name="com.apisimulator" level="debug"/> -->
+    <!-- <Logger name="com.apisimulator" level="info"/> -->
+    <!-- <Logger name="com.apisimulator" level="warn"/> -->
+    <!-- <Logger name="com.apisimulator" level="error"/> -->
+
+    <!-- <Logger name="org.springframework" level="debug"/> -->
+    <!-- <Logger name="org.springframework" level="info"/> -->
+    <!-- <Logger name="org.springframework" level="warn"/> -->
+    <Logger name="org.springframework" level="error" />
+
+    <!-- <Logger name="io.netty" level="debug"/> -->
+    <!-- <Logger name="io.netty" level="info"/> -->
+    <!-- <Logger name="io.netty" level="warn"/> -->
+    <!-- <Logger name="io.netty" level="error"/> -->
+    <Logger name="io.netty.util.concurrent.SingleThreadEventExecutor" level="error"/>
+
+    <!-- <Logger name="" level="debug"/> -->
+    <!-- <Logger name="" level="info"/> -->
+    <!-- <Logger name="" level="warn"/> -->
+    <!-- <Logger name="" level="error"/> -->
+
+    <!-- <Root level="debug"> -->
+    <Root level="info" includeLocation="false">
+      <!-- <Root level="warn"> -->
+      <!-- <Root level="error"> -->
+      <AppenderRef ref="ASYNC" />
+    </Root>
+  </Loggers>
+
+</Configuration>

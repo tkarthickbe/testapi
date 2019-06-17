@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------
+# Simlet-specific configuration.
+#----------------------------------------------------------------------
+
+matchers:
+- method: POST
+
+- where: UriPath
+  equals: "/api/SMTTest"
+
+response:
+  from: template
+  template: Simula
+  
+  status: 200
+  
+  headers:
+  - "Content-Type: application/json; charset=UTF-8"
+
+  body:
+    type: text
+    file: 
+      path: "${ simlets.path }/smt-test"
+      name: "Response.json"

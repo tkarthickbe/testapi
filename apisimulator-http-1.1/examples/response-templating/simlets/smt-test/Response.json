@@ -1,0 +1,24 @@
+{
+	"requestId": "12345667788",
+	"status": "ACK",
+	"units": [
+		{
+			"pcbSN": "L1B11901159900000100052305",
+			"tests": [
+				{
+					"machineName": "spi",
+					"status": "ACK"
+				}
+			]
+		},
+		{
+			"pcbSN": "L1B11901159900000100052306",
+			"tests": [
+				{
+					"machineName": "spi",
+					"status": "ACK"
+				}
+			]
+		}
+	]
+}

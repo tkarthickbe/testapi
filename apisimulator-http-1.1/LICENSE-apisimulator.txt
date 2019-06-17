@@ -1,0 +1,92 @@
+API Simulator™ License Agreement
+November 19, 2016
+
+PLEASE SCROLL DOWN AND READ CAREFULLY ALL TERMS AND CONDITIONS CONTAINED IN THIS LICENSE AGREEMENT (THIS "AGREEMENT") BEFORE USING API Simulator™ (THE "SOFTWARE").
+
+BY CLICKING ON THE "I ACCEPT" BUTTON BELOW, OR, BY DOWNLOADING, INSTALLING, RECEIVING OR USING THE SOFTWARE, YOU ACKNOWLEDGE AND AGREE THAT YOU: (I) HAVE READ ALL THE TERMS AND CONDITIONS CONTAINED IN THIS AGREEMENT; (II) UNDERSTAND ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT; AND (III) ACCEPT AND AGREE TO BE LEGALLY BOUND BY THE TERMS AND CONDITIONS OF THIS AGREEMENT.
+
+IF YOU DO NOT AGREE TO THESE TERMS, DO NOT CLICK THE "I ACCEPT" BUTTON, DOWNLOAD, INSTALL, RECEIVE OR USE THE SOFTWARE AND YOU WILL NOT HAVE A RIGHT TO USE ANY PART OF THE SOFTWARE. IF YOU ARE USING THE SOFTWARE AND DO NOT AGREE WITH THE TERMS AND CONDITIONS IN THIS AGREEMENT, YOU MUST IMMEDIATELY DISCONTINUE USE OF THE SOFTWARE.
+
+IF YOU ARE ENTERING INTO THIS AGREEMENT ON BEHALF OF A COMPANY OR OTHER LEGAL ENTITY, YOU REPRESENT THAT YOU HAVE THE AUTHORITY TO BIND SUCH COMPANY OR OTHER ENTITY, ITS AFFILIATES AND ALL USERS WHO ACCESS THE SOFTWARE, TO THIS AGREMEENT, IN WHICH CASE THE TERMS "LICENSEE", "YOU" OR "YOUR" SHALL REFER TO SUCH COMPANY OR OTHER ENTITY, ITS AFFILIATES AND ALL USERS OF THE SOFTWARE. IF YOU DO NOT HAVE SUCH AUTHORITY, OR IF YOU DO NOT AGREE WITH THIS AGREMEENT, YOU MUST NOT ACCEPT THIS AGREEMENT AND MAY NOT USE THE SOFTWARE.
+
+1. LICENSE.
+1.1. License Grant.
+Subject to the terms and conditions of this Agreement, during the term of this Agreement, the copyright owner ("Licensor") grants You a limited, non-exclusive, non-transferable, non-sublicensable license to download, install and use the Software on any number of computers, and create any number of API simulations for YOUR OWN INTERNAL BUSINESS OPERATIONS. Licensee's rights to the Software are limited to the licenses expressly granted to Licensee in this Agreement.
+
+1.2. Licensee Grant.
+Licensee grants a royalty-free, worldwide, perpetual license to use and incorporate into the Software any suggestion, idea, enhancement, feedback, recommendation, or other information Licensee provides relating to the Software.
+
+1.3 Open Source Software Components.
+The Software is distributed with open source software components ("Open Source Software Components") which are ONLY subject to the license agreements referenced herein (and to the limited warranties and limitation of liability provisions thereof). Each Open Source Software Component is the sole property of its respective owner as indicated in the applicable license, installation, readme and/or help files for such Open Source Software Components as published by such owner. This Agreement makes no representations or warranties with regard to the Open Source Software Components.
+
+1.4 Rights, Title, and Interest to Software.
+THE SOFTWARE IS LICENSED, NOT SOLD. Nothing contained herein shall be deemed to convey to Licensee any title, right, or interest in and to Software or any trademarks, service marks, or intellectual property rights. The Licensee will have no ownership interest in the Software or any modifications made to the Software in the future. The Software is protected by copyright laws in the United States and other countries as well as by international treaties.
+
+1.5 Restrictions and Requirements.
+Licensee shall not, and shall not permit anyone else within its control, to: 
+(a) use or possess the Software except as expressly allowed in this Agreement; 
+(b) remove, alter, or cause not to be displayed, any trademarks, proprietary notices or labels on or otherwise incorporated into the Software;
+(c) modify or adapt the Software or incorporate or merge it or any component thereof into another program or create derivative works from the Software;
+(d) reverse engineer, disassemble, decompile, translate, modify, alter, or otherwise change the Software. Licensee shall have no right to obtain source code for the Software;
+(e) place the Software onto a server so that it is accessible via a public network such as the Internet for purposes other than internal business use;
+(f) sell, transfer, assign, sublicense, rent, lease or lend any portion of the Software; or 
+(e) use the Software in a software-as-a-service or service bureau arrangement or for the benefit of unrelated third parties.
+
+2. WARRANTIES, DISCLAIMER AND LIMITATION OF LIABILITY.
+THE SOFTWARE AND ANY ASSOCIATED SERVICES ARE PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTY, CONDITIONS, REPRESENTATION OR INDEMNITY OF ANY KIND, EXPRESS, IMPLIED, ORAL, WRITTEN, STATUTORY, OR OTHERWISE, INCLUDING WITHOUT LIMITATION, WARRANTY OF MERCHANTABILITY, FITNESS FOR ANY PURPOSE, OR NON-INFRINGEMENT, OR THAT: 1) SOFTWARE WILL BE UNINTERRUPTED, ERROR FREE, OR OPERATE IN COMBINATION WITH ANY HARDWARE, SOFTWARE, SYSTEM, OR DATA; 2) DATA WILL BE ACCURATE OR RELIABLE; 3) THE QUALITY OF SOFTWARE, OR RESULTS OR INFORMATION OBTAINED WILL MEET LICENSEE'S REQUIREMENTS OR EXPECTATIONS; OR 4) ERRORS OR DEFECTS WILL BE CORRECTED. LICENSEE ASSUMES THE ENTIRE RISK AS TO THE RESULTS AND PERFORMANCE OF THE SOFTWARE AND/OR ASSOCIATED SERVICES. UNDER NO CIRCUMSTANCES SHALL LICENSOR, ITS EMPLOYEES, AFFILIATES, AGENTS, SUPPLIERS, OR SUCCESSORS BE LIABLE UNDER THE AGREEMENT OR THIS LICENSE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE OR EXEMPLARY DAMAGES, OR ANY OTHER DAMAGES WHATSOEVER, INCLUDING, BUT NOT LIMITED TO, LOSS OF REVENUE OR PROFIT, LOST OR DAMAGED DATA, LOSS OF USE OR OTHER COMMERCIAL OR ECONOMIC LOSS ARISING FROM AND/OR RELATED TO DELIVERY, INSTALLATION, USE, PERFORMANCE OF OR INABILITY TO USE THE LICENSED SOFTWARE AND/OR ANY OF ITS COMPONENTS, CUSTOMIZATIONS, DEVELOPMENTS OR MODIFICATIONS, WHETHER FORESEEABLE OR NOT, EVEN IF LICENSOR, OR ANY ONE ON ITS BEHALF, ARE ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+3. CONFIDENTIALITY.
+The Software (excluding the Open Source Software Components) contains trade secrets and proprietary know-how that belong exclusively to Licensor and may be made available to Licensee in strict confidence. ANY USE OR DISCLOSURE OF THE SOFTWARE OR OF ITS ALGORITHMS, SOURCE CODE, PROTOCOLS, OR INTERFACES, OTHER THAN IN STRICT ACCORDANCE WITH THIS LICENSE AGREEMENT, MAY BE ACTIONABLE AS A VIOLATION OF LICENSOR'S TRADE SECRET RIGHTS. The Software is not deemed to be placed in the public domain by Licensor.
+
+4. MAINTENANCE AND SUPPORT.
+The Software is being provided to Licensee hereunder at no charge, and there is no obligation to provide any support, updates, upgrades, or related services with respect to the Software.
+
+5. TERM AND TERMINATION.
+The non-exclusive and limited license granted hereunder shall remain in effect only for so long as Licensee is in compliance with the terms and conditions of this Agreement or until this Agreement is terminated. You may terminate this Agreement at any time by destroying all copies of Software. This Agreement will terminate immediately without notice from Licensor if You fail to comply with any provision of this Agreement. Either party may terminate this Agreement immediately should any Software become, or in either party's opinion be likely to become, the subject of a claim of infringement of any intellectual property right. Upon termination, all license grants end and You must destroy all copies of Software and cease all use.
+
+6. COMPLIANCE WITH LAWS; EXPORT.
+Licensee agrees that the Software will not be used in any manner prohibited by the United States Export Administration Act or any other export laws, restrictions or regulations. Licensee will defend, indemnify, and hold harmless Licensor from and against any violation of such laws or regulations by Licensee or any of its agents, officers, directors, employees, or contractors. In carrying out its respective obligations under the Agreement, each Party shall comply with all applicable laws and regulations of the local country and of any other applicable country.
+
+7. NOTICE.
+Licensee shall immediately notify Licensor of any legal notices served on Licensee, which might affect Licensor, or the Licensor's Software licensed hereunder.  
+
+8. SEVERABILITY.
+If, at any time, any clause or provision in this Agreement is or becomes unenforceable or invalid in any respect under the law of any jurisdiction, neither legality, validity or enforceability of the remaining provisions hereof nor the legality, validity or enforceability of such provision under the law of any other jurisdiction shall in any way be affected or impaired thereby.
+
+9. HOLD HARMLESS.
+Licensee agrees to indemnify, defend and hold harmless Licensor, its providers, and successors (and their officers, directors, agents, and employees) from and against any and all claims, costs, damages, losses, liabilities and expenses (including reasonable attorneys' fees and costs) arising out of or in connection with Licensee's use of the Software.
+
+10. NO THIRD PARTY BENEFICIARIES.
+Except as specifically provided herein, nothing in this Agreement, express or implied, is intended or shall confer upon any person or entity other than the Parties any right, benefit or remedy of any nature whatsoever under or by reason of this Agreement, except that any affiliate of Licensor may enforce this Agreement and any of its clauses or provisions either directly for such affiliates' benefit or the benefit of Licensor.
+
+11. ENTIRE AGREEMENT.
+This Agreement, including any exhibits and addendums hereto and thereto, constitutes the entire understanding between the parties with respect to the subject matter thereof. In the event that the Parties have entered into prior agreements with respect to the Software such agreements are hereby terminated and made of no further force or effect. There are no promises, terms, conditions, or obligations other than those contained herein and therein. Licensor may modify this Agreement or the Software at any time without notice to Licensee.
+
+12. ASSIGNMENT; SUCCESSORS.
+Licensee shall not be entitled to assign or transfer all or any portion of its rights, benefits, and obligations under this Agreement without the prior written consent of Licensor.
+This Agreement shall inure to the benefit of and be binding upon the parties hereto and their respective successors and assigns. Nothing in this Agreement, express or implied, is intended to confer on any person other than the parties hereto or their respective successors and assigns, any rights, remedies, obligations or liabilities under or by reason of this Agreement.
+
+13. SURVIVAL.
+Any provision of this Agreement that, in order to give proper effect to its intent, should survive termination, shall survive the termination of this Agreement.
+
+14. HEADINGS.
+The headings in this Agreement are for purposes of convenience only and will not limit or otherwise affect the terms or provisions hereof.
+
+15. ADDENDUM FOR OPEN SOURCE SOFTWARE COMPONENTS.
+This addendum is attached hereto and made a part hereof. The Software contains certain Open Source Software Components as listed below. Any use of the Open Source Software Components is subject to the applicable license agreements of the owners thereof. Licensee is not authorized to use any of the third party software in any way under this Agreement other than as components of the Software. Licensor makes no representations or warranties with respect to the Open Source Software Components. All Open Source Software Components are subject to the provisions and conditions published by the owners thereof and Licensor is not giving Licensee any assurances that such third party software may be used in any manner. If Licensee chooses to distribute or otherwise use the Open Source Software Components independent of the Software, Licensee is separately responsible to adhere to any applicable licenses issued by or available from the owners thereof. In any such case, there may be no reference whatsoever to Licensor. In no event shall Licensee state or imply that a derivative product Licensee created with the Open Source Software Components is produced by Licensor, in association with, under license or other rights derived from or otherwise endorsed or supported by Licensor. The hyperlinks listed below to the third party software licenses are those known to Licensor as of this date: October 19, 2018. 
+
+Third Party Software    License Type            License Reference
+Apache Commons CLI      Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+Apache Log4j(tm) 2      Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+Spring Framework        Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+The Groovy programming  Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+language 
+Netty                   Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+JSON in Java [package   ---                     https://github.com/stleary/JSON-java
+org.json]
+H2 database engine      MPL 2.0, or             https://www.mozilla.org/en-US/MPL/2.0/
+                        EPL 1.0                 https://opensource.org/licenses/eclipse-1.0.php
+Base64 by Robert Harder Public Domain           http://iharder.net/base64
+snakeyaml, Andrey Somov Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+Jayway JsonPath         Apache License v2.0     http://www.apache.org/licenses/LICENSE-2.0
+@

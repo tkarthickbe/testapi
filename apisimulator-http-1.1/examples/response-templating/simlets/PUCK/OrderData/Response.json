@@ -1,0 +1,6 @@
+{
+	"requestId": "string",
+	"status": "ACK",
+	"error" : null
+	
+}

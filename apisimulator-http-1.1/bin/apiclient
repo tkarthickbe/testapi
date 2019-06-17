@@ -1,0 +1,112 @@
+#!/bin/sh
+set -e
+#set -x
+# ---------------------------------------------------------------------------
+# API Client Script
+# ---------------------------------------------------------------------------
+
+if [ "$APICLIENT_JAVA" = "" ] ; then
+  APICLIENT_JAVA="$JAVA_HOME"
+  if [ "$APICLIENT_JAVA" = "" ] ; then
+    echo "APICLIENT_JAVA nor JAVA_HOME are set"
+    exit 100
+  fi
+fi
+
+
+## resolve links - $0 may be a link to simulator's home
+PRG="$0"
+
+# need this for relative symlinks
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="`dirname "$PRG"`/$link"
+  fi
+done
+
+ABS_THIS_DIR=`dirname "$PRG"`
+
+# This script is expected to be in 'bin' sub-directory under the simulator's home directory
+APICLIENT_HOME="$ABS_THIS_DIR/.."
+
+# Make it fully qualified
+APICLIENT_HOME=`cd "$APICLIENT_HOME" && pwd`
+
+
+CP=$APICLIENT_HOME/lib/*
+
+
+APICLIENT_CONFIG="$APICLIENT_HOME/config"
+if [ ! -d "$APICLIENT_CONFIG" ] ; then
+  echo Configuration directory "$APICLIENT_CONFIG" doesn\'t exist
+  exit 101
+fi
+
+
+test ".$APICLIENT_LOG_FILE" = . && APICLIENT_LOG_FILE="apiclient-log4j2.xml"
+
+APICLIENT_LOG_CONFIG="$APICLIENT_CONFIG/$APICLIENT_LOG_FILE"
+if [ ! -f "$APICLIENT_LOG_CONFIG" ] ; then
+  APICLIENT_LOG_CONFIG="$APICLIENT_HOME/config/$APICLIENT_LOG_FILE"
+fi
+
+# No spaces in any of the directory or file names! -Dlog4j.debug
+# The -DAPICLIENT_LOG_PATH JVM argument is used in log4j2.xml
+APICLIENT_LOG_ARGS="-Dlog4j.configurationFile=$APICLIENT_LOG_CONFIG"
+APICLIENT_LOG_ARGS="$APICLIENT_LOG_ARGS -DAPICLIENT_LOG_PATH=$APICLIENT_LOG_PATH "
+
+
+APICLIENT_ARGS=
+v_file_arg=0
+for v_arg in $@; do
+  if [ "1" = "$v_file_arg" ]; then
+    v_file_arg=0
+
+    v_file=
+    if [ -f "$v_arg" ]; then
+      v_file=$v_arg
+    else
+      v_start_chars=`echo $v_arg | cut -c1`
+      if [ "$v_start_chars" = "/" ]; then
+        # The file argument isn't a file that exists AND it represents an absolute file name
+        :
+      else
+        v_curr_dir=`pwd`
+        if [ -f "$v_curr_dir/$v_arg" ]; then
+          v_file=$v_curr_dir/$v_arg
+        else
+          v_start_chars=`echo $v_arg | cut -c1-2`
+          if [ "$v_start_chars" = "./" ]; then
+            # The file argument isn't a file in the current dir but it is path relative to the currnt dir
+            :
+          elif [ -f "$APICLIENT_HOME/$v_arg" ]; then
+            v_file=$APICLIENT_HOME/$v_arg
+          fi
+        fi
+      fi
+    fi
+
+    if [ "$v_file" = "" ]; then
+      # Add the file argument even though we know the file doesn't exist
+      APICLIENT_ARGS="$APICLIENT_ARGS \"$v_arg\""
+    else
+       v_fqfn=`echo $(cd $(dirname "$v_file") && pwd -P)/$(basename "$v_file")`
+       APICLIENT_ARGS="$APICLIENT_ARGS \"$v_fqfn\""
+    fi
+  else
+    APICLIENT_ARGS="$APICLIENT_ARGS $v_arg"
+    #echo "ARGS="$APICLIENT_ARGS
+    if [ "$v_arg" = "-f" -a "0" = "$v_file_arg" ]; then
+      v_file_arg=1
+    fi
+  fi
+done
+#echo "ARGS="$APICLIENT_ARGS
+
+
+"${APICLIENT_JAVA}/bin/java" ${APICLIENT_OPTS} -cp "$CP" ${APICLIENT_LOG_ARGS} \
+  com.apisimulator.http.HttpAPIClient $APICLIENT_ARGS

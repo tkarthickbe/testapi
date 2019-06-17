@@ -1,0 +1,111 @@
+#!/bin/sh
+#set -x
+
+## resolve links - $0 may be a link to simulator's home
+PRG="$0"
+
+# need this for relative symlinks
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="`dirname "$PRG"`/$link"
+  fi
+done
+
+ABS_THIS_DIR=`dirname "$PRG"`
+
+# This script is expected to be in 'bin' sub-directory under the simulator's home directory
+APIRECORDER_HOME="$ABS_THIS_DIR/.."
+
+# Make it fully qualified
+APIRECORDER_HOME=`cd "$APIRECORDER_HOME" && pwd`
+
+# The home of the Java install can be overridden
+if [ "$APIRECORDER_JAVA" = "" ] ; then
+  APIRECORDER_JAVA="$JAVA_HOME"
+  if [ "$APIRECORDER_JAVA" = "" ] ; then
+    echo "APIRECORDER_JAVA nor JAVA_HOME are set"
+    exit 100
+  fi
+fi
+
+test ".$APIRECORDER_CONFIG" = . && APIRECORDER_CONFIG="$APIRECORDER_HOME/config"
+if [ ! -d "$APIRECORDER_CONFIG" ] ; then 
+  echo Simulation configuration directory "$APIRECORDER_CONFIG" doesn\'t exist
+  exit 101
+fi
+
+test ".$APIRECORDER_LOG_DIR" = . && APIRECORDER_LOG_DIR="$APIRECORDER_HOME/logs"
+if [ ! -d "$APIRECORDER_LOG_DIR" ] ; then 
+  echo Simulation logs directory "$APIRECORDER_LOG_DIR" doesn\'t exist
+  exit 101
+fi
+
+APIRECORDER_LOG_NAME="apirecorder.log"
+APIRECORDER_OUT_NAME="apirecorder.out"
+
+if [ "$1" = "stop" ]; then
+  APIRECORDER_LOG_NAME="apirecorder-stop.log"
+  APIRECORDER_OUT_NAME="apirecorder-stop.out"
+fi
+
+APIRECORDER_LOG="$APIRECORDER_LOG_DIR/$APIRECORDER_LOG_NAME"
+APIRECORDER_OUT="$APIRECORDER_LOG_DIR/$APIRECORDER_OUT_NAME"
+
+# No spaces in any of the directory or file names! Add -Dlog4j.debug for troubleshooting
+test ".$APIRECORDER_LOG_CONF" = . && APIRECORDER_LOG_CONF="apirecorder-log4j2.xml"
+
+APIRECORDER_LOG_CONFIG="$APIRECORDER_CONFIG/$APIRECORDER_LOG_CONF"
+if [ ! -f "$APISIMULATION_LOG_CONFIG" ] ; then 
+  APIRECORDER_LOG_CONFIG="$APIRECORDER_HOME/config/$APIRECORDER_LOG_CONF"
+fi
+
+# The -DAPIRECORDER_LOG JVM argument is used in log4j.xml
+APIRECORDER_LOG_ARGS="-Dlog4j.configurationFile=$APIRECORDER_LOG_CONFIG"
+APIRECORDER_LOG_ARGS="$APIRECORDER_LOG_ARGS -DAPIRECORDER_LOG="$APIRECORDER_LOG" "
+
+
+CP="$APIRECORDER_HOME/lib/*"
+
+
+if [ "$1" = "start" ] ; then
+
+  # Only set if not set already
+  test ".$APIRECORDER_HEAP_SIZE" = . && APIRECORDER_HEAP_SIZE="-Xms96m -Xmx96m"
+  APIRECORDER_OPTS="-server -showversion $APIRECORDER_HEAP_SIZE"
+
+  shift
+  
+  #nohup ... > ${APIRECORDER_OUT} 2>&1 &
+  "${APIRECORDER_JAVA}/bin/java" ${APIRECORDER_OPTS} -cp "$CP" \
+    ${APIRECORDER_LOG_ARGS} \
+    com.apisimulator.http.recorder.APIRecorder \
+      $@
+
+elif [ "$1" = "stop" ]; then
+
+  # Only set if not set already
+  test ".$APIRECORDER_HEAP_SIZE" = . && APIRECORDER_HEAP_SIZE="-Xms64m -Xmx64m"
+  APIRECORDER_OPTS="-showversion $APIRECORDER_HEAP_SIZE"
+  
+  shift
+  
+  "${APIRECORDER_JAVA}/bin/java" ${APIRECORDER_OPTS} -cp "$CP" \
+    ${APIRECORDER_LOG_ARGS} \
+    com.apisimulator.http.recorder.APIRecorder \
+      -stop \
+      $@
+
+else
+
+  echo "Usage: $0 ( commands ... )"
+  echo "commands:"
+  echo "  start             Start the API Recorder"
+  echo "  stop              Stop the API Recorder"
+  exit 1
+
+fi
+

@@ -1,0 +1,7 @@
+API Simulator v1.1
+Copyright (c) 2014-2018
+
+-----------------------------------------------------------------------
+This Software contains certain Open Source Software Components as 
+listed in LICENSE-apisimulator.txt
+-----------------------------------------------------------------------
